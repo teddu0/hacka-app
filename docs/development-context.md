@@ -20,6 +20,8 @@
 
 - `src/client/` — React + Vite: экран загрузки, интерактивный статус анализа и дашборд с Recharts.
 - `src/client/components/ui/progress.tsx` — компонент shadcn/ui для полосы прогресса.
+- `src/client/transaction-list.ts` — чистая клиентская логика фильтрации по категории и сортировки операций по дате, категории или сумме.
+- `src/client/styles.css` — также задаёт явные цвета нативных пунктов фильтра категорий, чтобы Chrome на Windows не отображал светлый текст на белом фоне меню в тёмной теме.
 - `src/server/index.ts` — Express API, загрузка PDF в памяти и подключение кэша анализа.
 - `src/server/analysis-cache.ts` — process-local кэш успешных анализов: ключ — SHA-256 PDF, TTL — 7 дней, лимит — 100 результатов; запись на диск отсутствует, кэш очищается при рестарте API.
 - `src/server/analyzer.ts` — OpenAI Responses API для категоризации уже разобранных расходов и инсайтов, Structured Outputs и валидация Zod.
