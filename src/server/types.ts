@@ -3,15 +3,23 @@ import { z } from 'zod';
 export const categories = ['Продукты', 'Кафе', 'Транспорт', 'Подписки', 'Здоровье', 'Развлечения', 'Покупки', 'Переводы', 'Другое'] as const;
 
 export const transactionSchema = z.object({
-  date: z.string(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Дата должна быть в формате YYYY-MM-DD'),
   merchant: z.string().min(1),
   amount: z.number().positive(),
   type: z.enum(['expense', 'income', 'transfer']),
   category: z.enum(categories)
 });
 
-export const aiResultSchema = z.object({
-  transactions: z.array(transactionSchema).min(1),
+export const categoryAssignmentSchema = z.object({
+  id: z.number().int().nonnegative(),
+  category: z.enum(categories)
+});
+
+export const categorizationResultSchema = z.object({
+  categories: z.array(categoryAssignmentSchema)
+});
+
+export const insightsResultSchema = z.object({
   insights: z.array(z.string().min(1)).min(1).max(3)
 });
 
