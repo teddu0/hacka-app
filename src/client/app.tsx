@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { CircleAlert, FileText, ShieldCheck, Sparkles, UploadCloud } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -44,7 +44,7 @@ export function App() {
     <p className="mt-5 max-w-xl text-lg leading-8 text-muted-foreground">Загрузите банковскую выписку — мы покажем структуру расходов и персональные наблюдения.</p>
     <Card className="mt-8"><CardHeader><CardTitle>Загрузите выписку</CardTitle><CardDescription>Поддерживаются текстовые PDF-файлы до 8 МБ.</CardDescription></CardHeader><CardContent><form onSubmit={submit} className="space-y-4">
       <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors hover:border-primary hover:bg-muted/50"><input className="sr-only" type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /><UploadCloud className="size-8 text-primary" /><span className="font-medium">{file ? file.name : 'Выберите PDF-выписку'}</span><span className="text-sm text-muted-foreground">Нажмите, чтобы выбрать файл</span></label>
-      {error && <Alert variant="destructive"><CircleAlert /><AlertDescription>{error}</AlertDescription></Alert>}
+      {error && <Alert variant="destructive"><CircleAlert /><AlertTitle>Не удалось проверить выписку</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
       <Button className="w-full" size="lg" disabled={loading}>{loading ? 'Анализируем выписку…' : 'Проанализировать'}</Button>
     </form></CardContent></Card>
     <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-muted-foreground"><ShieldCheck className="size-4" />Выписка обрабатывается только для анализа и не сохраняется.</p>
