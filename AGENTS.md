@@ -19,7 +19,7 @@ The Node.js workflow is configured in `package.json`:
 - `npm.cmd run build` type-checks the server and builds the client.
 - `npm.cmd test` runs the Vitest suite.
 
-Document any new command in `README.md` when it is added to the manifest.
+Keep documentation in sync with every behavior, API, configuration, architecture, and user-flow change. Update the relevant file(s) in `docs/` and `README.md` in the same change; document any new command in `README.md` when it is added to the manifest. Do not defer documentation updates to a later task.
 
 Run the relevant formatter, linter, and test suite before opening a pull request. Keep command definitions reproducible and avoid machine-specific paths.
 
