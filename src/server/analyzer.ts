@@ -1,41 +1,71 @@
 import OpenAI from 'openai';
 import { bankStatementTemplate } from './bank-template.js';
-import { aiResultSchema, categories, type AnalysisResult } from './types.js';
+import { categories, categorizationResultSchema, insightsResultSchema, type AnalysisResult, type Transaction } from './types.js';
 import { buildAnalysis } from './summary.js';
 
-const schema = {
-  type: 'object', additionalProperties: false, required: ['transactions', 'insights'],
+const maxCategorizationBatchSize = 100;
+
+const categorizationSchema = {
+  type: 'object', additionalProperties: false, required: ['categories'],
   properties: {
-    transactions: {
-      type: 'array', minItems: 1,
+    categories: {
+      type: 'array',
       items: {
         type: 'object', additionalProperties: false,
-        required: ['date', 'merchant', 'amount', 'type', 'category'],
+        required: ['id', 'category'],
         properties: {
-          date: { type: 'string', description: 'Date as YYYY-MM-DD when possible' },
-          merchant: { type: 'string' }, amount: { type: 'number', minimum: 0.01 },
-          type: { type: 'string', enum: ['expense', 'income', 'transfer'] },
+          id: { type: 'integer', minimum: 0 },
           category: { type: 'string', enum: [...categories] }
         }
       }
-    },
-    insights: { type: 'array', minItems: 1, maxItems: 3, items: { type: 'string' } }
+    }
   }
 } as const;
 
+const insightsSchema = {
+  type: 'object', additionalProperties: false, required: ['insights'],
+  properties: { insights: { type: 'array', minItems: 1, maxItems: 3, items: { type: 'string' } } }
+} as const;
+
+function parseOutput(response: OpenAI.Responses.Response): unknown {
+  try { return JSON.parse(response.output_text); } catch { throw new Error('AI returned an unreadable result'); }
+}
+
 export async function analyzeStatement(pdfText: string): Promise<AnalysisResult> {
-  const statement = bankStatementTemplate.validate(pdfText);
+  const parsedTransactions = bankStatementTemplate.parse(pdfText);
   if (!process.env.OPENAI_API_KEY) throw new Error('OPENAI_API_KEY is not configured');
   const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  const response = await client.responses.create({
+  const transactions: Transaction[] = parsedTransactions.map((transaction) => ({
+    ...transaction,
+    category: transaction.type === 'transfer' ? 'Переводы' : 'Другое'
+  }));
+  const expenses = transactions
+    .map((transaction, id) => ({ id, transaction }))
+    .filter(({ transaction }) => transaction.type === 'expense');
+
+  for (let start = 0; start < expenses.length; start += maxCategorizationBatchSize) {
+    const batch = expenses.slice(start, start + maxCategorizationBatchSize);
+    const response = await client.responses.create({
+      model: process.env.OPENAI_MODEL ?? 'gpt-5.5',
+      store: false,
+      input: `Categorize every expense below using only the allowed Russian categories. The server parsed these records from a ${bankStatementTemplate.name} statement; do not add, remove, alter, or infer transactions. Return exactly one category for every id.\n\n${JSON.stringify(batch.map(({ id, transaction }) => ({ id, merchant: transaction.merchant, amount: transaction.amount })))}`,
+      text: { format: { type: 'json_schema', name: 'expense_categories', strict: true, schema: categorizationSchema } }
+    });
+    const result = categorizationResultSchema.safeParse(parseOutput(response));
+    const expectedIds = new Set(batch.map(({ id }) => id));
+    if (!result.success || result.data.categories.length !== expectedIds.size || result.data.categories.some(({ id }) => !expectedIds.delete(id))) {
+      throw new Error('AI returned incomplete expense categories');
+    }
+    for (const { id, category } of result.data.categories) transactions[id].category = category;
+  }
+
+  const insightsResponse = await client.responses.create({
     model: process.env.OPENAI_MODEL ?? 'gpt-5.5',
     store: false,
-    input: `You analyze a bank statement from ${bankStatementTemplate.name}. Extract every transaction. Amounts must be positive. Categorize expenses only using the allowed Russian categories. Transfers are not expenses. Produce up to 3 concise Russian observations grounded only in the extracted transactions. Statement:\n\n${statement}`,
-    text: { format: { type: 'json_schema', name: 'bank_statement_analysis', strict: true, schema } }
+    input: `Produce up to 3 concise Russian observations grounded only in these parsed and categorized bank-statement transactions:\n\n${JSON.stringify(transactions)}`,
+    text: { format: { type: 'json_schema', name: 'statement_insights', strict: true, schema: insightsSchema } }
   });
-  let parsed: unknown;
-  try { parsed = JSON.parse(response.output_text); } catch { throw new Error('AI returned an unreadable result'); }
-  const result = aiResultSchema.safeParse(parsed);
-  if (!result.success) throw new Error('AI returned a result that does not match the expected schema');
-  return buildAnalysis(result.data.transactions, result.data.insights);
+  const insights = insightsResultSchema.safeParse(parseOutput(insightsResponse));
+  if (!insights.success) throw new Error('AI returned insights that do not match the expected schema');
+  return buildAnalysis(transactions, insights.data.insights);
 }

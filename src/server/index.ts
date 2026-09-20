@@ -5,7 +5,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { analyzeStatement } from './analyzer.js';
-import { TemplateError } from './bank-template.js';
+import { bankStatementTemplate, TemplateError } from './bank-template.js';
 import { AnalysisCache } from './analysis-cache.js';
 
 const app = express();
@@ -20,13 +20,11 @@ app.post('/api/analyze-statement', upload.single('statement'), async (req, res, 
     if (file.mimetype !== 'application/pdf' && !file.originalname.toLowerCase().endsWith('.pdf')) {
       return res.status(400).json({ error: 'Поддерживаются только PDF-файлы.' });
     }
-    const fileBuffer = file.buffer;
-    const statementHash = createHash('sha256').update(fileBuffer).digest('hex');
-    const { value: cachedAnalysis, cached } = await analysisCache.getOrCreate(statementHash, async () => {
-      const parsedFile = await pdf(fileBuffer);
-      if (!parsedFile.text.trim()) throw new TemplateError('В PDF не найден текст. Загрузите экспортированную выписку, не скан.');
-      return analyzeStatement(parsedFile.text);
-    });
+    const parsedFile = await pdf(file.buffer);
+    if (!parsedFile.text.trim()) throw new TemplateError('В PDF не найден текст. Загрузите экспортированную выписку, не скан.');
+    const statement = bankStatementTemplate.validate(parsedFile.text);
+    const statementHash = createHash('sha256').update(statement).digest('hex');
+    const { value: cachedAnalysis, cached } = await analysisCache.getOrCreate(statementHash, () => analyzeStatement(statement));
     return res.set('X-Analysis-Cache', cached ? 'HIT' : 'MISS').json(cachedAnalysis);
   } catch (error) { return next(error); }
 });
