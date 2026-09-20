@@ -8,6 +8,7 @@ export type Transaction = {
 
 export type SortField = 'date' | 'category' | 'amount';
 export type SortDirection = 'ascending' | 'descending';
+export const transactionsPerPage = 25;
 
 export function getCategories(transactions: Transaction[]) {
   return [...new Set(transactions.map((transaction) => transaction.category))]
@@ -33,4 +34,16 @@ export function getVisibleTransactions(
       return comparison === 0 ? left.index - right.index : comparison * direction;
     })
     .map(({ transaction }) => transaction);
+}
+
+export function getTransactionPage<T>(transactions: T[], page: number, perPage = transactionsPerPage) {
+  const totalPages = Math.max(1, Math.ceil(transactions.length / perPage));
+  const currentPage = Math.min(Math.max(1, page), totalPages);
+  const start = (currentPage - 1) * perPage;
+
+  return {
+    currentPage,
+    totalPages,
+    transactions: transactions.slice(start, start + perPage)
+  };
 }

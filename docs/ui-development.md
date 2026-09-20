@@ -10,7 +10,7 @@ The expense donut chart shows the total in its center. Hovering a sector lifts i
 
 ## Transaction list
 
-The operations table has a category filter and sortable date, category, and amount columns. Keep filtering and sorting client-side: the API response remains the source of truth. The default order is date descending; clicking an active column reverses its direction. Show the active direction with an icon, use `aria-sort` on sortable headers, and retain the result count, a reset action, and an empty state for a selected category with no matching transactions.
+The operations table has a category filter, client-side pagination of 25 rows, and sortable date, category, and amount columns. Keep filtering, sorting, and pagination client-side: the API response remains the source of truth. Apply filtering and sorting before pagination. The default order is date descending; clicking an active column reverses its direction. Reset to page one when the filter or sort changes. When more than one page exists, show the visible row range, current page, and disabled states for the first and last page controls; mark the navigation with an accessible label and announce its current-page text politely. Show the active direction with an icon, use `aria-sort` on sortable headers, and retain the result count, a reset action, and an empty state for a selected category with no matching transactions.
 
 The category control is a native `select`. Set explicit foreground and background colors for its `option` elements: Chrome on Windows otherwise may open a white menu while inheriting the light foreground color from the dark theme.
 
