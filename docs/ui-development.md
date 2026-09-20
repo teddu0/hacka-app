@@ -2,6 +2,10 @@
 
 The project uses [shadcn/ui](https://ui.shadcn.com/) with Tailwind CSS v4.
 
+## Visual theme
+
+The interface supports light and dark themes. The selected theme is saved in browser `localStorage` under `pocket-accountant:theme`; when it is absent, the system preference is used. Theme tokens live in `src/client/styles.css`: light mode uses pale graphite tones, while dark mode uses neutral graphite and slate surfaces with subtle cool gradients; both use an amber action accent. Surface-level `data-slot` components (cards, alerts, tables, and progress blocks) use a semi-transparent, blurred glass surface with bright edge highlights and background blur; preserve this treatment when adding new dashboard surfaces.
+
 Before creating or changing a UI element, first search the configured `shadcn` MCP server for a suitable component or block. Add the matching registry item with `npx shadcn@latest add <component>`. Build a bespoke component only when the registry does not provide a suitable option.
 
 Current UI components live in `src/client/components/ui/`; they are owned by this project and can be adjusted when needed. The configuration is in `components.json`.
