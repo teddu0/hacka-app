@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CircleAlert, FileText, ShieldCheck, Sparkles, UploadCloud } from 'lucide-react';
 import { Cell, Pie, PieChart, ResponsiveContainer, Tooltip } from 'recharts';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 type Result = {
@@ -16,6 +17,33 @@ type Result = {
 
 const colors = ['#5B5BD6', '#0EA5A8', '#F59E0B', '#EF5B5B', '#8B5CF6', '#22C55E', '#EC4899', '#64748B', '#94A3B8'];
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 });
+
+function AnalysisProgress() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setSeconds((value) => value + 1), 1000);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const progress = Math.min(94, Math.round(12 + 82 * (1 - Math.exp(-seconds / 32))));
+  const status = seconds < 5
+    ? 'Загружаем и читаем выписку'
+    : seconds < 15
+      ? 'Извлекаем операции'
+      : seconds < 35
+        ? 'Анализируем категории расходов'
+        : 'Готовим персональные наблюдения';
+
+  return <div className="rounded-lg border bg-muted/40 p-4" role="status" aria-live="polite">
+    <div className="mb-2 flex items-center justify-between gap-3 text-sm">
+      <span className="font-medium">{status}…</span>
+      <span className="shrink-0 tabular-nums text-muted-foreground">{seconds} сек.</span>
+    </div>
+    <Progress value={progress} aria-label="Ход анализа выписки" />
+    <p className="mt-2 text-xs text-muted-foreground">Обычно это занимает меньше минуты. Не закрывайте страницу.</p>
+  </div>;
+}
 
 export function App() {
   const [result, setResult] = useState<Result | null>(null);
@@ -45,6 +73,7 @@ export function App() {
     <Card className="mt-8"><CardHeader><CardTitle>Загрузите выписку</CardTitle><CardDescription>Поддерживаются текстовые PDF-файлы до 8 МБ.</CardDescription></CardHeader><CardContent><form onSubmit={submit} className="space-y-4">
       <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed p-8 text-center transition-colors hover:border-primary hover:bg-muted/50"><input className="sr-only" type="file" accept="application/pdf,.pdf" onChange={(event) => setFile(event.target.files?.[0] ?? null)} /><UploadCloud className="size-8 text-primary" /><span className="font-medium">{file ? file.name : 'Выберите PDF-выписку'}</span><span className="text-sm text-muted-foreground">Нажмите, чтобы выбрать файл</span></label>
       {error && <Alert variant="destructive"><CircleAlert /><AlertTitle>Не удалось проверить выписку</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>}
+      {loading && <AnalysisProgress />}
       <Button className="w-full" size="lg" disabled={loading}>{loading ? 'Анализируем выписку…' : 'Проанализировать'}</Button>
     </form></CardContent></Card>
     <p className="mt-4 flex items-center justify-center gap-2 text-center text-sm text-muted-foreground"><ShieldCheck className="size-4" />Выписка обрабатывается только для анализа и не сохраняется.</p>
