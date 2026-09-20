@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { getCategories, getVisibleTransactions, type Transaction } from '../src/client/transaction-list.js';
+import { getCategories, getTransactionPage, getVisibleTransactions, transactionsPerPage, type Transaction } from '../src/client/transaction-list.js';
 
 const transactions: Transaction[] = [
   { date: '2026-09-03', merchant: 'Coffee', amount: 1200, type: 'expense', category: 'Кафе' },
@@ -24,5 +24,17 @@ describe('transaction list', () => {
       .toEqual(['Транспорт', 'Продукты', 'Кафе']);
     expect(getVisibleTransactions(transactions, '', 'amount', 'descending').map((item) => item.amount))
       .toEqual([3400, 1200, 600]);
+  });
+
+  it('returns 25 transactions per page and keeps page numbers in range', () => {
+    const items = Array.from({ length: 51 }, (_, index) => index + 1);
+
+    expect(getTransactionPage(items, 2)).toEqual({
+      currentPage: 2,
+      totalPages: 3,
+      transactions: items.slice(transactionsPerPage, transactionsPerPage * 2)
+    });
+    expect(getTransactionPage(items, 99).currentPage).toBe(3);
+    expect(getTransactionPage([], 1)).toEqual({ currentPage: 1, totalPages: 1, transactions: [] });
   });
 });
