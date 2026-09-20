@@ -2,7 +2,7 @@
 
 ## Project Structure & Module Organization
 
-This repository is currently a bootstrap repository: it contains no application source, test suite, package manifest, or build configuration. Keep the root reserved for repository-level files such as `README.md`, configuration, and this guide. When implementation begins, use a clear, conventional layout:
+This is a TypeScript web application. Keep the root reserved for repository-level files such as `README.md`, configuration, and this guide. The project uses the following layout:
 
 - `src/` for production code, organized by feature or domain.
 - `tests/` for automated tests, mirroring the relevant `src/` paths.
@@ -13,7 +13,13 @@ Do not commit generated output, local caches, secrets, or dependency directories
 
 ## Build, Test, and Development Commands
 
-No build, run, lint, or test command is configured yet. Do not invent scripts or document commands until their configuration is committed. Once a toolchain is chosen, expose the normal workflow through its manifest or build file and document it in `README.md`. For example, a Node project should provide `npm run dev`, `npm test`, and `npm run lint`; a Python project should provide equivalent documented commands.
+The Node.js workflow is configured in `package.json`:
+
+- `npm.cmd run dev` starts the Express API and Vite dev server.
+- `npm.cmd run build` type-checks the server and builds the client.
+- `npm.cmd test` runs the Vitest suite.
+
+Document any new command in `README.md` when it is added to the manifest.
 
 Run the relevant formatter, linter, and test suite before opening a pull request. Keep command definitions reproducible and avoid machine-specific paths.
 
