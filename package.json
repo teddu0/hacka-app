@@ -1,0 +1,36 @@
+{
+  "name": "pocket-accountant",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "concurrently \"tsx watch --env-file=.env src/server/index.ts\" \"vite --host 0.0.0.0\"",
+    "build": "tsc -p tsconfig.server.json && vite build",
+    "start": "node --env-file=.env dist/server/index.js",
+    "test": "vitest run --config vitest.config.ts"
+  },
+  "dependencies": {
+    "express": "^5.1.0",
+    "multer": "^2.0.2",
+    "openai": "^6.22.0",
+    "pdf-parse": "^1.1.1",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "recharts": "^3.6.0",
+    "zod": "^4.1.12"
+  },
+  "devDependencies": {
+    "@types/express": "^5.0.5",
+    "@types/multer": "^2.0.0",
+    "@types/node": "^24.10.0",
+    "@types/pdf-parse": "^1.1.4",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
+    "concurrently": "^9.2.1",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vite": "^7.2.2",
+    "vitest": "^4.0.8"
+  }
+}
