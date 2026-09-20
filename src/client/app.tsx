@@ -15,6 +15,20 @@ type Result = {
   insights: string[];
 };
 
+const savedResultKey = 'pocket-accountant:last-analysis';
+
+function loadSavedResult(): Result | null {
+  try {
+    const saved = window.localStorage.getItem(savedResultKey);
+    if (!saved) return null;
+    const parsed = JSON.parse(saved) as Result;
+    if (!parsed.period || !Array.isArray(parsed.transactions) || !parsed.summary || !Array.isArray(parsed.insights)) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
 const colors = ['#5B5BD6', '#0EA5A8', '#F59E0B', '#EF5B5B', '#8B5CF6', '#22C55E', '#EC4899', '#64748B', '#94A3B8'];
 const money = new Intl.NumberFormat('ru-RU', { style: 'currency', currency: 'KZT', maximumFractionDigits: 0 });
 
@@ -46,7 +60,7 @@ function AnalysisProgress() {
 }
 
 export function App() {
-  const [result, setResult] = useState<Result | null>(null);
+  const [result, setResult] = useState<Result | null>(loadSavedResult);
   const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -60,12 +74,13 @@ export function App() {
       const response = await fetch('/api/analyze-statement', { method: 'POST', body });
       const data = await response.json() as Result & { error?: string };
       if (!response.ok) throw new Error(data.error ?? 'Ошибка анализа.');
+      window.localStorage.setItem(savedResultKey, JSON.stringify(data));
       setResult(data);
     } catch (reason) { setError(reason instanceof Error ? reason.message : 'Ошибка анализа.'); }
     finally { setLoading(false); }
   }
 
-  if (result) return <Dashboard result={result} reset={() => { setResult(null); setFile(null); }} />;
+  if (result) return <Dashboard result={result} reset={() => { window.localStorage.removeItem(savedResultKey); setResult(null); setFile(null); }} />;
   return <main className="grid min-h-svh place-items-center bg-[radial-gradient(circle_at_70%_20%,oklch(0.91_0.07_285),transparent_26%),var(--background)] px-6 py-8"><section className="w-full max-w-2xl">
     <Badge variant="secondary" className="mb-4 gap-1.5"><Sparkles className="size-3.5" />AI-финансы без ручных таблиц</Badge>
     <h1 className="text-5xl font-bold tracking-tight text-balance sm:text-7xl">Карманный<br /><span className="text-primary">бухгалтер</span></h1>
