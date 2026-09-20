@@ -8,6 +8,12 @@ The interface supports light and dark themes. The selected theme is saved in bro
 
 The expense donut chart shows the total in its center. Hovering a sector lifts it, displays its category and amount in the center, and dims the other legend entries.
 
+## Transaction list
+
+The operations table has a category filter and sortable date, category, and amount columns. Keep filtering and sorting client-side: the API response remains the source of truth. The default order is date descending; clicking an active column reverses its direction. Show the active direction with an icon, use `aria-sort` on sortable headers, and retain the result count, a reset action, and an empty state for a selected category with no matching transactions.
+
+The category control is a native `select`. Set explicit foreground and background colors for its `option` elements: Chrome on Windows otherwise may open a white menu while inheriting the light foreground color from the dark theme.
+
 Before creating or changing a UI element, first search the configured `shadcn` MCP server for a suitable component or block. Add the matching registry item with `npx shadcn@latest add <component>`. Build a bespoke component only when the registry does not provide a suitable option.
 
 Current UI components live in `src/client/components/ui/`; they are owned by this project and can be adjusted when needed. The configuration is in `components.json`.
