@@ -2,12 +2,15 @@ import express, { type NextFunction, type Request, type Response } from 'express
 import multer from 'multer';
 import pdf from 'pdf-parse';
 import path from 'node:path';
+import { createHash } from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 import { analyzeStatement } from './analyzer.js';
-import { TemplateError } from './bank-template.js';
+import { bankStatementTemplate, TemplateError } from './bank-template.js';
+import { AnalysisCache } from './analysis-cache.js';
 
 const app = express();
 const upload = multer({ storage: multer.memoryStorage(), limits: { fileSize: 8 * 1024 * 1024 } });
+const analysisCache = new AnalysisCache();
 
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 app.post('/api/analyze-statement', upload.single('statement'), async (req, res, next) => {
@@ -17,10 +20,12 @@ app.post('/api/analyze-statement', upload.single('statement'), async (req, res, 
     if (file.mimetype !== 'application/pdf' && !file.originalname.toLowerCase().endsWith('.pdf')) {
       return res.status(400).json({ error: 'Поддерживаются только PDF-файлы.' });
     }
-    const parsed = await pdf(file.buffer);
-    if (!parsed.text.trim()) return res.status(422).json({ error: 'В PDF не найден текст. Загрузите экспортированную выписку, не скан.' });
-    const analysis = await analyzeStatement(parsed.text);
-    return res.json(analysis);
+    const parsedFile = await pdf(file.buffer);
+    if (!parsedFile.text.trim()) throw new TemplateError('В PDF не найден текст. Загрузите экспортированную выписку, не скан.');
+    const statement = bankStatementTemplate.validate(parsedFile.text);
+    const statementHash = createHash('sha256').update(statement).digest('hex');
+    const { value: cachedAnalysis, cached } = await analysisCache.getOrCreate(statementHash, () => analyzeStatement(statement));
+    return res.set('X-Analysis-Cache', cached ? 'HIT' : 'MISS').json(cachedAnalysis);
   } catch (error) { return next(error); }
 });
 
